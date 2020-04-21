@@ -1,0 +1,11 @@
+main: fr.bakaaless.DJPlugin.plugin.DjPlugin
+version: 1.0.0
+name: DjPlugin
+author: BakaAless
+api-version: "1.15"
+load: POSTWORLD
+softdepend:
+  - NoteBlockAPI
+commands:
+  djstation:
+    usage: ""
