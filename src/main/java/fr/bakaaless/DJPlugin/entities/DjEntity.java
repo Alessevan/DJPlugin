@@ -1,29 +1,22 @@
 package fr.bakaaless.DJPlugin.entities;
 
 import com.xxmicloxx.NoteBlockAPI.model.Song;
-import com.xxmicloxx.NoteBlockAPI.songplayer.*;
+import com.xxmicloxx.NoteBlockAPI.songplayer.PositionSongPlayer;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
-import fr.bakaaless.DJPlugin.utils.FileManager;
-import fr.bakaaless.DJPlugin.utils.InventoryUtils;
-import fr.bakaaless.DJPlugin.utils.ItemUtils;
-import fr.bakaaless.DJPlugin.utils.Message;
+import fr.bakaaless.DJPlugin.utils.*;
 import lombok.Getter;
-import org.bukkit.Color;
-import org.bukkit.DyeColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.entity.*;
+import org.bukkit.util.Vector;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class DjEntity {
 
     @Getter
-    private final DjPlugin main;
-
+    private final int id;
     @Getter
-    private int id;
+    private DjPlugin main;
 
     @Getter
     private Optional<ArmorStand> dj;
@@ -42,40 +35,43 @@ public class DjEntity {
 
     @Getter
     private Optional<Player> player;
-
     @Getter
-    private final Entity[] entities;
+    private Entity[] entities;
 
     @Getter
     private PositionSongPlayer songPlayer;
 
+    @Getter
+    private List<Animations> animations;
+
     private int task;
 
     public DjEntity(final int id) {
-        this.main = DjPlugin.getInstance();
         this.id = id;
         this.dj = Optional.empty();
         this.head = Optional.empty();
         this.jukebox = Optional.empty();
         this.dancer1 = Optional.empty();
         this.dancer2 = Optional.empty();
-        this.player = Optional.empty();
-        this.entities = new Entity[2];
-        this.songPlayer = null;
-        this.task = -1;
+        this.setup();
     }
 
     public DjEntity(final int id, final Optional<ArmorStand> djEntity, final Optional<ArmorStand> head, final Optional<Location> jukebox, final Optional<Location> dancer1, final Optional<Location> dancer2) {
-        this.main = DjPlugin.getInstance();
         this.id = id;
         this.dj = djEntity;
         this.head = head;
         this.jukebox = jukebox;
         this.dancer1 = dancer1;
         this.dancer2 = dancer2;
+        this.setup();
+    }
+
+    private void setup() {
+        this.main = DjPlugin.getInstance();
         this.player = Optional.empty();
         this.entities = new Entity[2];
         this.songPlayer = null;
+        this.animations = new ArrayList<>();
         this.task = -1;
     }
 
@@ -222,34 +218,59 @@ public class DjEntity {
         final Map<Integer, Integer> dancers = new HashMap<>();
         dancers.put(0, 1);
         dancers.put(1, 1);
+        this.getAnimations().add(Animations.RAINBOW);
         this.task = this.getMain().getServer().getScheduler().scheduleSyncRepeatingTask(this.getMain(), () -> {
             this.getHead().ifPresent(armorStand -> {
                 final Location headLoc = armorStand.getLocation().clone();
                 headLoc.setYaw((armorStand.getLocation().getYaw() + 3f) % 360);
                 armorStand.teleport(headLoc);
             });
-            if(this.songPlayer != null) {
-                for(final Player player : this.getMain().getServer().getOnlinePlayers()){
+            if (this.songPlayer != null) {
+                for (final Player player : this.getMain().getServer().getOnlinePlayers()) {
                     this.songPlayer.removePlayer(player);
-                    if(this.songPlayer.isInRange(player))
+                    if (this.songPlayer.isInRange(player))
                         this.songPlayer.addPlayer(player);
                 }
             }
-            for(int i = 0; i < 2; i++) {
-                if(this.entities.length <= i) break;
+            for (int i = 0; i < 2; i++) {
+                if (this.entities.length <= i) break;
                 if (this.entities[i] != null) {
-                    if(this.entities[i] instanceof Blaze){
+                    if (this.entities[i] instanceof Blaze) {
                         this.entities[i].teleport(this.entities[i].getLocation().clone().add(0D, 0.04 * dancers.get(i), 0D));
-                        if((this.entities[i].getLocation().getY() - (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) >= 2) || (this.entities[i].getLocation().getY() <= (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) + 0.01)){
+                        if ((this.entities[i].getLocation().getY() - (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) >= 2) || (this.entities[i].getLocation().getY() <= (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) + 0.01)) {
                             dancers.replace(i, dancers.get(i) * (-1));
                         }
-                    }
-                    else {
+                    } else {
                         final Location location = this.entities[i].getLocation().clone();
                         location.setPitch(location.getPitch() + 2f * dancers.get(i));
                         this.entities[i].teleport(location);
-                        if((this.entities[i].getLocation().getPitch() >= 60f) || (this.entities[i].getLocation().getPitch() <= -60f)){
+                        if ((this.entities[i].getLocation().getPitch() >= 60f) || (this.entities[i].getLocation().getPitch() <= -60f)) {
                             dancers.replace(i, dancers.get(i) * (-1));
+                        }
+                    }
+                }
+            }
+            for (final Animations animations : this.getAnimations()) {
+                if (animations.equals(Animations.RAINBOW)) {
+                    final double twoPI = Math.PI;
+                    final double radius = 4D;
+                    final int particles = 12;
+                    Vector nv = this.getDj().get().getLocation().getDirection().normalize();
+                    Vector ya = VectorUtils.perp(nv, new Vector(0, 1, 0)).normalize();
+                    Vector xa = ya.getCrossProduct(nv).normalize();
+                    nv.multiply(-1);
+                    for (int c = 0; c < 8; c++) {
+                        for (double theta = 0; theta < particles; theta += twoPI / particles) {
+                            double angle = twoPI * theta / particles;
+                            double ax = Math.cos(angle) * (radius - c / 5f);
+                            double az = Math.sin(angle) * (radius - c / 5f);
+                            double zb = 0;
+                            double xi = xa.getX() * ax + ya.getX() * az + nv.getX() * zb;
+                            double yi = xa.getY() * ax + ya.getY() * az + nv.getY() * zb;
+                            double zi = xa.getZ() * ax + ya.getZ() * az + nv.getZ() * zb;
+                            final Location location = this.getDj().get().getLocation().clone().add(new Vector(xi, yi, zi));
+                            final int[] rgb = Colors.getRGBFromValue(c);
+                            location.getWorld().spawnParticle(Particle.REDSTONE, location, 1, new Particle.DustOptions(Color.fromRGB(rgb[0], rgb[1], rgb[2]), 1));
                         }
                     }
                 }
@@ -271,6 +292,7 @@ public class DjEntity {
 
     public void stopAnimate(){
         this.removeEntity();
+        this.getAnimations().clear();
     }
 
     public void removeEntity(){
@@ -314,7 +336,7 @@ public class DjEntity {
             this.newDj(location);
         });
         this.stopSound();
-        this.removeEntity();
+        this.stopAnimate();
         this.task = -1;
     }
 
