@@ -88,12 +88,16 @@ public class DjPlugin extends JavaPlugin {
             final long current = (new Timestamp(System.currentTimeMillis())).getTime();
             this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "§3§lDJ Station §8§l» §7Chargement des DJ."));
             for (final String id : this.getFileManager().getFile("data").getConfigurationSection("instances").getKeys(false)) {
-                final Optional<ArmorStand> dj = Optional.ofNullable((ArmorStand) this.getServer().getEntity(UUID.fromString(this.getFileManager().getFile("data").getString("instances." + id + ".dj"))));
-                final Optional<ArmorStand> head = (this.getFileManager().getFile("data").getString("instances." + id + ".head") == null ? Optional.empty() : Optional.ofNullable((ArmorStand) this.getServer().getEntity(UUID.fromString(this.getFileManager().getFile("data").getString("instances." + id + ".head")))));
-                final Optional<Location> jukebox = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".jukebox"));
-                final Optional<Location> dancer1 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer1"));
-                final Optional<Location> dancer2 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer2"));
-                this.getDjEntities().add(new DjEntity(Integer.parseInt(id), dj, head, jukebox, dancer1, dancer2));
+                try {
+                    final Optional<ArmorStand> dj = Optional.ofNullable((ArmorStand) this.getServer().getEntity(UUID.fromString(this.getFileManager().getFile("data").getString("instances." + id + ".dj"))));
+                    final Optional<ArmorStand> head = (this.getFileManager().getFile("data").getString("instances." + id + ".head") == null ? Optional.empty() : Optional.ofNullable((ArmorStand) this.getServer().getEntity(UUID.fromString(this.getFileManager().getFile("data").getString("instances." + id + ".head")))));
+                    final Optional<Location> jukebox = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".jukebox"));
+                    final Optional<Location> dancer1 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer1"));
+                    final Optional<Location> dancer2 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer2"));
+                    this.getDjEntities().add(new DjEntity(Integer.parseInt(id), dj, head, jukebox, dancer1, dancer2));
+                } catch (Exception ignored) {
+                    this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "§3§lDJ Station §8§l» §7Erreur lors du chargement du DJ #" + id + ". (" + ((new Timestamp(System.currentTimeMillis())).getTime() - current)) + "ms)");
+                }
             }
             this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "§3§lDJ Station §8§l» §7Chargement de " + this.getDjEntities().size() + " DJ terminé. (" + ((new Timestamp(System.currentTimeMillis())).getTime() - current)) + "ms)");
         });

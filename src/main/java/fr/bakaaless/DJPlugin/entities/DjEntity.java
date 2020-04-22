@@ -218,7 +218,6 @@ public class DjEntity {
         final Map<Integer, Integer> dancers = new HashMap<>();
         dancers.put(0, 1);
         dancers.put(1, 1);
-        this.getAnimations().add(Animations.RAINBOW);
         this.task = this.getMain().getServer().getScheduler().scheduleSyncRepeatingTask(this.getMain(), () -> {
             this.getHead().ifPresent(armorStand -> {
                 final Location headLoc = armorStand.getLocation().clone();
@@ -283,7 +282,7 @@ public class DjEntity {
     }
 
     public boolean isAnimated(){
-        return this.hasDancers();
+        return this.hasDancers() || this.getAnimations().size() > 0;
     }
 
     public boolean hasDancers(){
