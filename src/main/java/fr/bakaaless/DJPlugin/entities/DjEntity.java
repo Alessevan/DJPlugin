@@ -2,12 +2,18 @@ package fr.bakaaless.DJPlugin.entities;
 
 import com.xxmicloxx.NoteBlockAPI.model.Song;
 import com.xxmicloxx.NoteBlockAPI.songplayer.PositionSongPlayer;
+import fr.bakaaless.DJPlugin.entities.animations.IAnimations;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
-import fr.bakaaless.DJPlugin.utils.*;
+import fr.bakaaless.DJPlugin.utils.FileManager;
+import fr.bakaaless.DJPlugin.utils.InventoryUtils;
+import fr.bakaaless.DJPlugin.utils.ItemUtils;
+import fr.bakaaless.DJPlugin.utils.Message;
 import lombok.Getter;
-import org.bukkit.*;
+import org.bukkit.Color;
+import org.bukkit.DyeColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.*;
-import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -42,7 +48,7 @@ public class DjEntity {
     private PositionSongPlayer songPlayer;
 
     @Getter
-    private List<Animations> animations;
+    private List<IAnimations> animationsProgress;
 
     private int task;
 
@@ -71,7 +77,7 @@ public class DjEntity {
         this.player = Optional.empty();
         this.entities = new Entity[2];
         this.songPlayer = null;
-        this.animations = new ArrayList<>();
+        this.animationsProgress = new ArrayList<>();
         this.task = -1;
     }
 
@@ -237,8 +243,6 @@ public class DjEntity {
                 }
             }
             for (int i = 0; i < 2; i++) {
-                if (this.entities.length <= i) break;
-                if (this.entities[i] != null) {
                     if (this.entities[i] instanceof Blaze) {
                         this.entities[i].teleport(this.entities[i].getLocation().clone().add(0D, 0.04 * dancers.get(i), 0D));
                         if ((this.entities[i].getLocation().getY() - (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) >= 2) || (this.entities[i].getLocation().getY() <= (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) + 0.01)) {
@@ -252,33 +256,9 @@ public class DjEntity {
                             dancers.replace(i, dancers.get(i) * (-1));
                         }
                     }
-                }
             }
-            for (final Animations animations : this.getAnimations()) {
-                if (animations.equals(Animations.RAINBOW)) {
-                    final double twoPI = Math.PI;
-                    final double radius = 4D;
-                    final int particles = 12;
-                    Vector nv = this.getDj().get().getLocation().getDirection().normalize();
-                    nv.setY(0);
-                    Vector ya = VectorUtils.perp(nv, new Vector(0, 1, 0)).normalize();
-                    Vector xa = ya.getCrossProduct(nv).normalize();
-                    nv.multiply(-1);
-                    for (int c = 0; c < 8; c++) {
-                        for (double theta = 0; theta < particles; theta += twoPI / particles) {
-                            double angle = twoPI * theta / particles;
-                            double ax = Math.cos(angle) * (radius - c / 5f);
-                            double az = Math.sin(angle) * (radius - c / 5f);
-                            double zb = 0;
-                            double xi = xa.getX() * ax + ya.getX() * az + nv.getX() * zb;
-                            double yi = xa.getY() * ax + ya.getY() * az + nv.getY() * zb;
-                            double zi = xa.getZ() * ax + ya.getZ() * az + nv.getZ() * zb;
-                            final Location location = this.getDj().get().getLocation().clone().add(new Vector(xi, yi, zi));
-                            final int[] rgb = Colors.getRGBFromValue(c);
-                            location.getWorld().spawnParticle(Particle.REDSTONE, location, 1, new Particle.DustOptions(Color.fromRGB(rgb[0], rgb[1], rgb[2]), 1));
-                        }
-                    }
-                }
+            for (final IAnimations animations : this.getAnimationsProgress()) {
+                animations.progress();
             }
         }, 0L, 1L).getTaskId();
     }
@@ -288,21 +268,27 @@ public class DjEntity {
     }
 
     public boolean isAnimated(){
-        return this.hasDancers() || this.getAnimations().size() > 0;
+        return this.hasDancers() || this.getAnimationsProgress().size() > 0;
     }
 
     public boolean hasDancers(){
         return this.entities[0] != null && this.entities[1] != null;
     }
 
-    public void stopAnimate(){
+    public void stopAnimate() {
         this.removeEntity();
-        this.getAnimations().clear();
+        final Iterator<IAnimations> it = this.getAnimationsProgress().iterator();
+        while (it.hasNext()) {
+            final IAnimations iAnimations = it.next();
+            iAnimations.stop();
+            this.getAnimationsProgress().remove(iAnimations);
+        }
+        this.getAnimationsProgress().clear();
     }
 
-    public void removeEntity(){
-        for(int i = 0; i < 2; i++) {
-            if(this.entities.length <= i) break;
+    public void removeEntity() {
+        for (int i = 0; i < 2; i++) {
+            if (this.entities.length <= i) break;
             if (this.entities[i] != null) {
                 this.entities[i].remove();
                 this.entities[i] = null;
@@ -310,16 +296,30 @@ public class DjEntity {
         }
     }
 
-    public void setEntities(final EntityType entityType){
+    public ArrayList<Entity> getDancerEntities() {
+        final ArrayList<Entity> entities = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            if (this.entities.length <= i) break;
+            if (this.entities[i] != null) {
+                entities.add(this.entities[i]);
+            }
+        }
+        return entities;
+    }
+
+    public void setEntities(final EntityType entityType) {
         this.removeEntity();
-        for(int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++) {
             final Location location = (i == 0 ? this.getDancer1().get() : this.getDancer2().get());
             final Entity entity = location.getWorld().spawn(location, entityType.getEntityClass());
             entity.setInvulnerable(true);
             entity.setGlowing(true);
             entity.setSilent(true);
-            if(entity instanceof LivingEntity) ((LivingEntity) entity).setAI(false);
-            if(entity instanceof Sheep){
+            if (entity instanceof LivingEntity) {
+                ((LivingEntity) entity).setAI(false);
+                ((LivingEntity) entity).setCollidable(false);
+            }
+            if (entity instanceof Sheep) {
                 ((Sheep) entity).setSheared(false);
                 ((Sheep) entity).setColor(DyeColor.values()[new Random().nextInt(DyeColor.values().length)]);
             }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 public class DjPlugin extends JavaPlugin {
@@ -46,7 +47,7 @@ public class DjPlugin extends JavaPlugin {
 
     @Getter()
     @Setter()
-    private boolean loadDJ;
+    private Optional<Consumer<Player>> loadDJ;
 
     @Override
     public void onEnable() {
@@ -96,33 +97,37 @@ public class DjPlugin extends JavaPlugin {
         this.listening = new Listening();
         this.executor = new Executor();
         // Réccupération asynchrone des stations
-        if (this.getServer().getOnlinePlayers().size() > 0) {
-            this.getServer().getScheduler().runTaskAsynchronously(this, () -> {
-                final long current = (new Timestamp(System.currentTimeMillis())).getTime();
-                this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "&3&lDJ Station &8&l» &7Chargement des DJ."));
+        loadDJ = Optional.of(player -> this.getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            final long current = (new Timestamp(System.currentTimeMillis())).getTime();
+            this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "&3&lDJ Station &8&l» &7Chargement des DJ."));
+            this.getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
                 for (final String id : this.getFileManager().getFile("data").getConfigurationSection("instances").getKeys(false)) {
                     // En cas d'exception Null
                     try {
-                        this.getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
-                            final Location djLoc = (Location) this.getFileManager().getFile("data").get("instances." + id + ".dj");
-                            final Optional<ArmorStand> dj = Optional.of((ArmorStand) djLoc.getWorld().getNearbyEntities(djLoc, 1, 1, 1).parallelStream().filter(entity -> entity.getLocation().equals(djLoc)).filter(entity -> entity instanceof ArmorStand).findFirst().get());
-                            final Optional<Location> headLoc = (this.getFileManager().getFile("data").getString("instances." + id + ".head") == null ? Optional.empty() : Optional.of((Location) this.getFileManager().getFile("data").get("instances." + id + ".head")));
-                            final Optional<ArmorStand> head = (!headLoc.isPresent() ? Optional.empty() : headLoc.get().getWorld().getNearbyEntities(headLoc.get(), 1, 1, 1).parallelStream().filter(entity -> entity instanceof ArmorStand).filter(entity -> LocationUtils.isSameLoc(entity.getLocation(), headLoc.get())).findFirst().isPresent() ? Optional.of((ArmorStand) headLoc.get().getWorld().getNearbyEntities(headLoc.get(), 1, 1, 1).parallelStream().filter(entity -> entity instanceof ArmorStand).filter(entity -> LocationUtils.isSameLoc(entity.getLocation(), headLoc.get())).findFirst().get()) : Optional.empty());
-                            final Optional<Location> jukebox = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".jukebox"));
-                            final Optional<Location> dancer1 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer1"));
-                            final Optional<Location> dancer2 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer2"));
-                            this.getDjEntities().add(new DjEntity(Integer.parseInt(id), dj, head, jukebox, dancer1, dancer2));
-                        }, 0L);
+                        final Location djLoc = (Location) this.getFileManager().getFile("data").get("instances." + id + ".dj");
+                        final Optional<ArmorStand> dj = Optional.of((ArmorStand) djLoc.getWorld().getNearbyEntities(djLoc, 1, 1, 1).parallelStream().filter(entity -> entity.getLocation().equals(djLoc)).filter(entity -> entity instanceof ArmorStand).findFirst().get());
+                        final Optional<Location> headLoc = (this.getFileManager().getFile("data").getString("instances." + id + ".head") == null ? Optional.empty() : Optional.of((Location) this.getFileManager().getFile("data").get("instances." + id + ".head")));
+                        final Optional<ArmorStand> head = (!headLoc.isPresent() ? Optional.empty() : headLoc.get().getWorld().getNearbyEntities(headLoc.get(), 1, 1, 1).parallelStream().filter(entity -> entity instanceof ArmorStand).filter(entity -> LocationUtils.isSameLoc(entity.getLocation(), headLoc.get())).findFirst().isPresent() ? Optional.of((ArmorStand) headLoc.get().getWorld().getNearbyEntities(headLoc.get(), 1, 1, 1).parallelStream().filter(entity -> entity instanceof ArmorStand).filter(entity -> LocationUtils.isSameLoc(entity.getLocation(), headLoc.get())).findFirst().get()) : Optional.empty());
+                        final Optional<Location> jukebox = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".jukebox"));
+                        final Optional<Location> dancer1 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer1"));
+                        final Optional<Location> dancer2 = Optional.ofNullable((Location) this.getFileManager().getFile("data").get("instances." + id + ".dancer2"));
+                        this.getDjEntities().add(new DjEntity(Integer.parseInt(id), dj, head, jukebox, dancer1, dancer2));
+
                     } catch (Exception e) {
                         this.getLogger().log(Level.SEVERE, ChatColor.translateAlternateColorCodes('&', "&c&lDJ Station &4&l» &cErreur lors du chargement du DJ #" + id + ". (" + ((new Timestamp(System.currentTimeMillis())).getTime() - current)) + "ms)", e);
                     }
                 }
                 this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "&3&lDJ Station &8&l» &7Chargement de " + this.getDjEntities().size() + " DJ terminé. (" + ((new Timestamp(System.currentTimeMillis())).getTime() - current)) + "ms)");
-                loadDJ = false;
-            });
+                loadDJ = Optional.empty();
+            }, 0L);
+        }));
+        if (this.getServer().getOnlinePlayers().size() > 0) {
+            if (loadDJ.isPresent()) {
+                loadDJ.get().accept(this.getServer().getOnlinePlayers().iterator().next());
+                loadDJ = Optional.empty();
+            }
         } else {
             this.getLogger().log(Level.INFO, ChatColor.translateAlternateColorCodes('&', "&3&lDJ Station &8&l» &7Chargement des DJ lors de la connexion d'un joueur."));
-            loadDJ = true;
         }
     }
 

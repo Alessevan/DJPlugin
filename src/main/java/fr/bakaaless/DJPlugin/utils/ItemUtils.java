@@ -4,7 +4,9 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -17,8 +19,12 @@ import java.util.UUID;
 
 public class ItemUtils {
 
-    public ItemStack ItemStack(final Material m, final Optional<String> displayNameOptional, final Optional<String> loreOptional, Optional<Integer> amountOptional){
-        if(Optional.empty().equals(amountOptional)) amountOptional = Optional.of(1);
+    public ItemStack ItemStack(final Material m, final Optional<String> displayNameOptional, final Optional<String> loreOptional, Optional<Integer> amountOptional) {
+        return this.ItemStack(m, displayNameOptional, loreOptional, amountOptional, false);
+    }
+
+    public ItemStack ItemStack(final Material m, final Optional<String> displayNameOptional, final Optional<String> loreOptional, Optional<Integer> amountOptional, boolean b) {
+        if (Optional.empty().equals(amountOptional)) amountOptional = Optional.of(1);
         final ItemStack itemStack = new ItemStack(m, amountOptional.get());
         final ItemMeta itemMeta = itemStack.getItemMeta();
         assert itemMeta != null;
@@ -26,6 +32,10 @@ public class ItemUtils {
         loreOptional.ifPresent(lore ->
                 itemMeta.setLore(Arrays.asList(lore.split("\n")))
         );
+        if (b) {
+            itemStack.addUnsafeEnchantment(Enchantment.VANISHING_CURSE, 1);
+            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
         itemStack.setItemMeta(itemMeta);
         amountOptional.ifPresent(itemStack::setAmount);
         return itemStack;
@@ -42,24 +52,23 @@ public class ItemUtils {
 
     @SuppressWarnings("null")
     public ItemStack SkullLocal(final String displayName, String texture) {
-        if(!texture.contains("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUv")) {
+        if (!texture.contains("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUv")) {
             texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUv" + texture;
         }
         final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD, 1);
-        final SkullMeta itemMeta = (SkullMeta)itemStack.getItemMeta();
-        final GameProfile gameProfile = new GameProfile(UUID.randomUUID(), (String)null);
+        final SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
+        final GameProfile gameProfile = new GameProfile(UUID.randomUUID(), null);
         gameProfile.getProperties().put("textures", new Property("textures", texture));
         try {
             final Field declaredField = itemMeta.getClass().getDeclaredField("profile");
             declaredField.setAccessible(true);
             declaredField.set(itemMeta, gameProfile);
-        }
-        catch (NoSuchFieldException | IllegalAccessException ex) {
+        } catch (NoSuchFieldException | IllegalAccessException ex) {
             final Throwable t = null;
             t.printStackTrace();
         }
         itemMeta.setDisplayName(displayName);
-        itemStack.setItemMeta((ItemMeta)itemMeta);
+        itemStack.setItemMeta(itemMeta);
         return itemStack;
     }
 

@@ -1,6 +1,8 @@
 package fr.bakaaless.DJPlugin.utils;
 
 import fr.bakaaless.DJPlugin.entities.DjEntity;
+import fr.bakaaless.DJPlugin.entities.animations.IAnimations;
+import fr.bakaaless.DJPlugin.entities.animations.Rainbow;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -134,11 +136,21 @@ public class InventoryUtils implements Listener {
                 .drawDj()
                 .setItem(38, new ItemUtils().SkullLocal("§6§lPage précédente", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjI1OTliZDk4NjY1OWI4Y2UyYzQ5ODg1MjVjOTRlMTlkZGQzOWZhZDA4YTM4Mjg0YTE5N2YxYjcwNjc1YWNjIn19fQ=="), inventoryClickEvent -> DjEntity.DjMenu(player));
         DjPlugin.getInstance().getDjEntity(player).ifPresent(djEntity -> {
-            inventoryUtils.setItem(20, new ItemUtils().ItemStack(Material.BEACON, Optional.of("§4A§cr§6c§7-§ee§an§7-§2C§9i§1e§5l"), Optional.empty(), Optional.of(1)), inventoryClickEvent -> {
+            final boolean hasRainbow = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.RAINBOW));
+            inventoryUtils.setItem(20, new ItemUtils().ItemStack(Material.BOOK, Optional.of("§4A§cr§6c§7-§ee§an§7-§2C§9i§1e§5l"), Optional.empty(), Optional.of(1), hasRainbow), inventoryClickEvent -> {
                 player.closeInventory();
-                if (djEntity.getAnimations().contains(Animations.RAINBOW))
-                    djEntity.getAnimations().remove(Animations.RAINBOW);
-                else djEntity.getAnimations().add(Animations.RAINBOW);
+                if (hasRainbow) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == Rainbow.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else {
+                    final Rainbow rainbow = new Rainbow(djEntity);
+                    djEntity.getAnimationsProgress().add(rainbow);
+                    rainbow.start();
+                }
             });
             if (djEntity.getDancer1().isPresent() && djEntity.getDancer2().isPresent())
                 inventoryUtils.setItem(24, new ItemUtils().ItemStack(Material.SPAWNER, Optional.of("§7Danseurs"), Optional.empty(), Optional.of(1)), inventoryClickEvent -> InventoryUtils.drawDancers(player));
