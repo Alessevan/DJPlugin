@@ -1,6 +1,6 @@
 main: fr.bakaaless.DJPlugin.plugin.DjPlugin
-version: 1.0.0
-name: DjPlugin
+version: 0.0.1-ALPHA
+name: DjStation
 author: BakaAless
 api-version: "1.15"
 load: POSTWORLD

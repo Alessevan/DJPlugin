@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class Listening implements Listener {
@@ -18,13 +19,19 @@ public class Listening implements Listener {
         this.main = DjPlugin.getInstance();
         this.getMain().getServer().getPluginManager().registerEvents(this, this.getMain());
     }
+
     @EventHandler
-    public void onPlayerInteractAtEntity(final PlayerInteractAtEntityEvent e){
+    public void onPlayerJoin(final PlayerJoinEvent e) {
+        new JoinListener(this).handle(e);
+    }
+
+    @EventHandler
+    public void onPlayerInteractAtEntity(final PlayerInteractAtEntityEvent e) {
         new InteractEntityListener().handle(e);
     }
 
     @EventHandler
-    public void onEntityDamageByEntity(final EntityDamageByEntityEvent e){
+    public void onEntityDamageByEntity(final EntityDamageByEntityEvent e) {
         new DamageEntityListener().handle(e);
     }
 

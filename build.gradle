@@ -4,6 +4,7 @@ plugins {
 }
 
 group 'fr.bakaaless'
+version '0.0.1-ALPHA'
 
 repositories {
     jcenter()

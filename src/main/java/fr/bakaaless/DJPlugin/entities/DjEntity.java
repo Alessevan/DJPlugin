@@ -166,11 +166,16 @@ public class DjEntity {
 
     public void save(){
         final FileManager fileManager = this.getMain().getFileManager();
-        if(this.getDj().isPresent()) fileManager.setLine("data", "instances." + this.getId() + ".dj", this.getDj().get().getUniqueId().toString());
-        if(this.getHead().isPresent()) fileManager.setLine("data", "instances." + this.getId() + ".head", this.getHead().get().getUniqueId().toString());
-        if(this.getJukebox().isPresent()) fileManager.setLine("data", "instances." + this.getId() + ".jukebox", this.getJukebox().get());
-        if(this.getDancer1().isPresent()) fileManager.setLine("data", "instances." + this.getId() + ".dancer1", this.getDancer1().get());
-        if(this.getDancer2().isPresent()) fileManager.setLine("data", "instances." + this.getId() + ".dancer2", this.getDancer2().get());
+        if (this.getDj().isPresent())
+            fileManager.setLine("data", "instances." + this.getId() + ".dj", this.getDj().get().getLocation());
+        if (this.getHead().isPresent())
+            fileManager.setLine("data", "instances." + this.getId() + ".head", this.getHead().get().getLocation());
+        if (this.getJukebox().isPresent())
+            fileManager.setLine("data", "instances." + this.getId() + ".jukebox", this.getJukebox().get());
+        if (this.getDancer1().isPresent())
+            fileManager.setLine("data", "instances." + this.getId() + ".dancer1", this.getDancer1().get());
+        if (this.getDancer2().isPresent())
+            fileManager.setLine("data", "instances." + this.getId() + ".dancer2", this.getDancer2().get());
     }
 
     public void destroy(){
@@ -218,7 +223,7 @@ public class DjEntity {
         final Map<Integer, Integer> dancers = new HashMap<>();
         dancers.put(0, 1);
         dancers.put(1, 1);
-        this.task = this.getMain().getServer().getScheduler().scheduleSyncRepeatingTask(this.getMain(), () -> {
+        this.task = this.getMain().getServer().getScheduler().runTaskTimerAsynchronously(this.getMain(), () -> {
             this.getHead().ifPresent(armorStand -> {
                 final Location headLoc = armorStand.getLocation().clone();
                 headLoc.setYaw((armorStand.getLocation().getYaw() + 3f) % 360);
@@ -255,6 +260,7 @@ public class DjEntity {
                     final double radius = 4D;
                     final int particles = 12;
                     Vector nv = this.getDj().get().getLocation().getDirection().normalize();
+                    nv.setY(0);
                     Vector ya = VectorUtils.perp(nv, new Vector(0, 1, 0)).normalize();
                     Vector xa = ya.getCrossProduct(nv).normalize();
                     nv.multiply(-1);
@@ -274,7 +280,7 @@ public class DjEntity {
                     }
                 }
             }
-        }, 0L, 1L);
+        }, 0L, 1L).getTaskId();
     }
 
     public boolean isStopped(){
