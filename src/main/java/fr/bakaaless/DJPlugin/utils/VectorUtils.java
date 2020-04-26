@@ -1,5 +1,6 @@
 package fr.bakaaless.DJPlugin.utils;
 
+import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 public class VectorUtils {
@@ -56,6 +57,13 @@ public class VectorUtils {
 
     public static Vector proj(Vector onto, Vector u) {
         return onto.clone().multiply(onto.dot(u) / onto.lengthSquared());
+    }
+
+    public static Vector from(final Location start, final Location end) {
+        final double x = end.getX() - start.getX();
+        final double y = end.getY() - start.getY();
+        final double z = end.getZ() - start.getZ();
+        return new Vector(x, y, z);
     }
 
 }

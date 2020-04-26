@@ -16,16 +16,17 @@ public class Rainbow extends IAnimations {
     int particles;
 
     public Rainbow(final DjEntity djEntity) {
-        this.djEntity = djEntity;
+        super(djEntity);
         this.animationType = Animations.RAINBOW;
     }
 
 
     @Override
     public void start() {
+        super.start();
         this.twoPI = Math.PI;
         this.radius = 4D;
-        this.particles = 12;
+        this.particles = 8;
     }
 
     @Override
@@ -37,7 +38,7 @@ public class Rainbow extends IAnimations {
         nv.multiply(-1);
         for (int c = 0; c < 8; c++) {
             for (double theta = 0; theta < particles; theta += twoPI / particles) {
-                double angle = twoPI * theta / particles;
+                double angle = twoPI * theta / particles + Math.random() % twoPI / particles;
                 double ax = Math.cos(angle) * (radius - c / 5f);
                 double az = Math.sin(angle) * (radius - c / 5f);
                 double zb = 0;
@@ -49,5 +50,11 @@ public class Rainbow extends IAnimations {
                 location.getWorld().spawnParticle(Particle.REDSTONE, location, 1, new Particle.DustOptions(Color.fromRGB(rgb[0], rgb[1], rgb[2]), 1));
             }
         }
+        super.progress();
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
     }
 }

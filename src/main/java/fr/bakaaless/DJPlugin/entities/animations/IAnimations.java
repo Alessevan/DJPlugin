@@ -9,13 +9,22 @@ public abstract class IAnimations {
 
     public Animations animationType;
 
+    protected int step;
+
+    public IAnimations(final DjEntity djEntity) {
+        this.djEntity = djEntity;
+    }
+
     public void start() {
+        this.step = 0;
     }
 
     public void progress() {
+        this.step++;
     }
 
     public void stop() {
+        this.step = 0;
     }
 
     public DjEntity getDjEntity() {

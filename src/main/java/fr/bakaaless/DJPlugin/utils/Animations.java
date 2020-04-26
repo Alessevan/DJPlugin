@@ -2,6 +2,7 @@ package fr.bakaaless.DJPlugin.utils;
 
 public enum Animations {
 
+    DISCOBALL(AnimationsType.SCENE),
     RAINBOW(AnimationsType.DJ);
 
     private final AnimationsType type;
@@ -18,7 +19,9 @@ public enum Animations {
         return this.getType().getValue().equals(animations.getType().getValue());
     }
 
-    private enum AnimationsType {
+    public enum AnimationsType {
+
+        SCENE("SCENE"),
         DJ("DJ");
 
         private final String value;

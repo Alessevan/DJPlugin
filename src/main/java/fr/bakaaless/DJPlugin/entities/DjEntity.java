@@ -4,10 +4,7 @@ import com.xxmicloxx.NoteBlockAPI.model.Song;
 import com.xxmicloxx.NoteBlockAPI.songplayer.PositionSongPlayer;
 import fr.bakaaless.DJPlugin.entities.animations.IAnimations;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
-import fr.bakaaless.DJPlugin.utils.FileManager;
-import fr.bakaaless.DJPlugin.utils.InventoryUtils;
-import fr.bakaaless.DJPlugin.utils.ItemUtils;
-import fr.bakaaless.DJPlugin.utils.Message;
+import fr.bakaaless.DJPlugin.utils.*;
 import lombok.Getter;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -238,21 +235,25 @@ public class DjEntity {
             if (this.songPlayer != null) {
                 for (final Player player : this.getMain().getServer().getOnlinePlayers()) {
                     this.songPlayer.removePlayer(player);
-                    if (this.songPlayer.isInRange(player))
+                    if (this.songPlayer.isInRange(player)) {
                         this.songPlayer.addPlayer(player);
+                        ActionBarUtils.sendActionBar(player, "§7Musique : " + this.songPlayer.getSong().getTitle());
+                    }
                 }
             }
             for (int i = 0; i < 2; i++) {
-                    if (this.entities[i] instanceof Blaze) {
-                        this.entities[i].teleport(this.entities[i].getLocation().clone().add(0D, 0.04 * dancers.get(i), 0D));
-                        if ((this.entities[i].getLocation().getY() - (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) >= 2) || (this.entities[i].getLocation().getY() <= (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) + 0.01)) {
-                            dancers.replace(i, dancers.get(i) * (-1));
-                        }
-                    } else {
-                        final Location location = this.entities[i].getLocation().clone();
-                        location.setPitch(location.getPitch() + 2f * dancers.get(i));
-                        this.entities[i].teleport(location);
-                        if ((this.entities[i].getLocation().getPitch() >= 60f) || (this.entities[i].getLocation().getPitch() <= -60f)) {
+                if (this.entities.length <= i) break;
+                if (this.entities[i] == null) continue;
+                if (this.entities[i] instanceof Blaze) {
+                    this.entities[i].teleport(this.entities[i].getLocation().clone().add(0D, 0.04 * dancers.get(i), 0D));
+                    if ((this.entities[i].getLocation().getY() - (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) >= 2) || (this.entities[i].getLocation().getY() <= (i == 0 ? this.getDancer1().get().getY() : this.getDancer2().get().getY()) + 0.01)) {
+                        dancers.replace(i, dancers.get(i) * (-1));
+                    }
+                } else {
+                    final Location location = this.entities[i].getLocation().clone();
+                    location.setPitch(location.getPitch() + 2f * dancers.get(i));
+                    this.entities[i].teleport(location);
+                    if ((this.entities[i].getLocation().getPitch() >= 60f) || (this.entities[i].getLocation().getPitch() <= -60f)) {
                             dancers.replace(i, dancers.get(i) * (-1));
                         }
                     }
@@ -267,23 +268,38 @@ public class DjEntity {
         return this.task == -1;
     }
 
-    public boolean isAnimated(){
+    public boolean isAnimated() {
         return this.hasDancers() || this.getAnimationsProgress().size() > 0;
     }
 
-    public boolean hasDancers(){
+    public boolean hasDancers() {
         return this.entities[0] != null && this.entities[1] != null;
     }
 
     public void stopAnimate() {
         this.removeEntity();
-        final Iterator<IAnimations> it = this.getAnimationsProgress().iterator();
-        while (it.hasNext()) {
-            final IAnimations iAnimations = it.next();
-            iAnimations.stop();
-            this.getAnimationsProgress().remove(iAnimations);
-        }
+        this.getAnimationsProgress().forEach(IAnimations::stop);
         this.getAnimationsProgress().clear();
+    }
+
+    public void removeAnimations(final IAnimations... iAnimations) {
+        for (final IAnimations animations : iAnimations) {
+            final Optional<IAnimations> iAnimationsOptional = this.getAnimationsProgress().parallelStream().filter(animation -> animation.equals(animations)).findFirst();
+            if (iAnimationsOptional.isPresent()) {
+                iAnimationsOptional.get().stop();
+                this.getAnimationsProgress().remove(iAnimationsOptional.get());
+            }
+        }
+    }
+
+    public void addAnimations(final IAnimations... iAnimations) {
+        for (final IAnimations animations : iAnimations) {
+            final Animations.AnimationsType animationsType = animations.getAnimationType().getType();
+            if (this.getAnimationsProgress().parallelStream().anyMatch(animation -> animation.getAnimationType().getType().equals(animationsType)))
+                this.getAnimationsProgress().parallelStream().filter(animation -> animation.getAnimationType().getType().equals(animationsType)).forEach(this::removeAnimations);
+            animations.start();
+            this.getAnimationsProgress().add(animations);
+        }
     }
 
     public void removeEntity() {
