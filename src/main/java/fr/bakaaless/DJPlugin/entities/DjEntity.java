@@ -3,6 +3,7 @@ package fr.bakaaless.DJPlugin.entities;
 import com.xxmicloxx.NoteBlockAPI.model.Song;
 import com.xxmicloxx.NoteBlockAPI.songplayer.PositionSongPlayer;
 import fr.bakaaless.DJPlugin.entities.animations.IAnimations;
+import fr.bakaaless.DJPlugin.entities.animations.choregraphies.Choreography;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
 import fr.bakaaless.DJPlugin.utils.*;
 import lombok.Getter;
@@ -264,12 +265,24 @@ public class DjEntity {
         }, 0L, 1L).getTaskId();
     }
 
-    public boolean isStopped(){
+    public boolean isStopped() {
         return this.task == -1;
     }
 
     public boolean isAnimated() {
         return this.hasDancers() || this.getAnimationsProgress().size() > 0;
+    }
+
+    public boolean hasChoreography() {
+        return this.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().getType().equals(Animations.AnimationsType.CHOREOGRAPHY));
+    }
+
+    public void stopChoreography() {
+        final Optional<IAnimations> choreography = this.getAnimationsProgress().parallelStream().filter(iAnimations -> iAnimations.getAnimationType().getType().equals(Animations.AnimationsType.CHOREOGRAPHY)).findFirst();
+        if (choreography.isPresent() && choreography.get() instanceof Choreography) {
+            choreography.get().stop();
+            this.getAnimationsProgress().remove(choreography.get());
+        }
     }
 
     public boolean hasDancers() {
@@ -295,8 +308,14 @@ public class DjEntity {
     public void addAnimations(final IAnimations... iAnimations) {
         for (final IAnimations animations : iAnimations) {
             final Animations.AnimationsType animationsType = animations.getAnimationType().getType();
-            if (this.getAnimationsProgress().parallelStream().anyMatch(animation -> animation.getAnimationType().getType().equals(animationsType)))
-                this.getAnimationsProgress().parallelStream().filter(animation -> animation.getAnimationType().getType().equals(animationsType)).forEach(this::removeAnimations);
+            List<IAnimations> iAnimationsList = new ArrayList<>();
+            for (final IAnimations iAnimations1 : this.getAnimationsProgress()) {
+                if (iAnimations1.getAnimationType().getType().equals(animationsType)) {
+                    iAnimationsList.add(iAnimations1);
+                }
+            }
+            for (final IAnimations iAnimations1 : iAnimationsList)
+                this.removeAnimations(iAnimations1);
             animations.start();
             this.getAnimationsProgress().add(animations);
         }
@@ -333,7 +352,6 @@ public class DjEntity {
             entity.setSilent(true);
             if (entity instanceof LivingEntity) {
                 ((LivingEntity) entity).setAI(false);
-                ((LivingEntity) entity).setCollidable(false);
             }
             if (entity instanceof Sheep) {
                 ((Sheep) entity).setSheared(false);

@@ -3,7 +3,13 @@ package fr.bakaaless.DJPlugin.utils;
 public enum Animations {
 
     DISCOBALL(AnimationsType.SCENE),
-    RAINBOW(AnimationsType.DJ);
+    RAINBOW(AnimationsType.DJ),
+    CRAZY(AnimationsType.CHOREOGRAPHY),
+    HANDSUP(AnimationsType.CHOREOGRAPHY),
+    SCRATCH(AnimationsType.CHOREOGRAPHY),
+    JUMP(AnimationsType.CHOREOGRAPHY),
+    SKY(AnimationsType.CHOREOGRAPHY),
+    SlOWDANCE(AnimationsType.CHOREOGRAPHY);
 
     private final AnimationsType type;
 
@@ -22,7 +28,8 @@ public enum Animations {
     public enum AnimationsType {
 
         SCENE("SCENE"),
-        DJ("DJ");
+        DJ("DJ"),
+        CHOREOGRAPHY("CHOREOGRAPHY");
 
         private final String value;
 

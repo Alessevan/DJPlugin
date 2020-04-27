@@ -4,6 +4,7 @@ import fr.bakaaless.DJPlugin.entities.DjEntity;
 import fr.bakaaless.DJPlugin.entities.animations.DiscoBall;
 import fr.bakaaless.DJPlugin.entities.animations.IAnimations;
 import fr.bakaaless.DJPlugin.entities.animations.Rainbow;
+import fr.bakaaless.DJPlugin.entities.animations.choregraphies.*;
 import fr.bakaaless.DJPlugin.plugin.DjPlugin;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -165,6 +166,9 @@ public class InventoryUtils implements Listener {
                     djEntity.addAnimations(new DiscoBall(djEntity));
                 }
             });
+            inventoryUtils.setItem(22, new ItemUtils().ItemStack(Material.ARMOR_STAND, Optional.of("§6Chorégraphies"), Optional.empty(), Optional.of(1)), inventoryClickEvent -> {
+                InventoryUtils.drawChoreography(player);
+            });
             if (djEntity.getDancer1().isPresent() && djEntity.getDancer2().isPresent())
                 inventoryUtils.setItem(24, new ItemUtils().ItemStack(Material.SPAWNER, Optional.of("§7Danseurs"), Optional.empty(), Optional.of(1)), inventoryClickEvent -> InventoryUtils.drawDancers(player));
             if (djEntity.isAnimated())
@@ -194,7 +198,7 @@ public class InventoryUtils implements Listener {
                 djEntity.setEntities(EntityType.SHEEP);
             });
             slot++;
-            if(djEntity.hasDancers())
+            if (djEntity.hasDancers())
                 inventoryUtils.setItem(40, new ItemUtils().ItemStack(Material.BARRIER, Optional.of("§c§lEnlever les danseurs"), Optional.empty(), Optional.empty()), inventoryClickEvent -> {
                     player.closeInventory();
                     djEntity.removeEntity();
@@ -203,9 +207,101 @@ public class InventoryUtils implements Listener {
         inventoryUtils.open(player);
     }
 
-    public void open(final Player player){
-        final Inventory inventory = DjPlugin.getPlugin(DjPlugin.class).getServer().createInventory(null, 9*rows, ChatColor.translateAlternateColorCodes('&',  title));
-        for(final Integer slot : this.items.keySet()){
+    public static void drawChoreography(final Player player) {
+        final InventoryUtils inventoryUtils = InventoryUtils.create("&3&lDJ Station &8&l» &7Animations &8&l» &7Chorégraphie", 5)
+                .drawDj()
+                .setItem(38, new ItemUtils().SkullLocal("§6§lPage précédente", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjI1OTliZDk4NjY1OWI4Y2UyYzQ5ODg1MjVjOTRlMTlkZGQzOWZhZDA4YTM4Mjg0YTE5N2YxYjcwNjc1YWNjIn19fQ=="), inventoryClickEvent -> InventoryUtils.drawAnimations(player));
+        DjPlugin.getInstance().getDjEntity(player).ifPresent(djEntity -> {
+            final boolean hasCrazy = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.CRAZY));
+            inventoryUtils.setItem(10, new ItemUtils().SkullLocal("§6Fou", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzFiZWNhY2VjODU4YTE5ODQ4ODYwYjI1MjJjMzI5MzZhZGYxNTg4YzFlZjQyMzc5NDAzZmVmODNkYTRiYiJ9fX0="), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasCrazy) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == Crazy.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new Crazy(djEntity));
+            });
+            final boolean hasHandsUp = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.HANDSUP));
+            inventoryUtils.setItem(11, new ItemUtils().SkullLocal("§6Mains en l'air", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzYzNmYyNzI0YWE2YWE0ZGU3YWM0NmMxOWYzYzg0NWZiMTQ4NDdhNTE4YzhmN2UwM2Q3OTJjODJlZmZiMSJ9fX0="), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasHandsUp) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == HandsUp.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new HandsUp(djEntity));
+            });
+            final boolean hasJump = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.JUMP));
+            inventoryUtils.setItem(12, new ItemUtils().SkullLocal("§6Sauts", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2JhYWJlNzI0ZWFlNTljNWQxM2Y0NDJjN2RjNWQyYjFjNmI3MGMyZjgzMzY0YTQ4OGNlNTk3M2FlODBiNGMzIn19fQ=="), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasJump) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == Jump.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new Jump(djEntity));
+            });
+            final boolean hasScratch = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.SCRATCH));
+            inventoryUtils.setItem(13, new ItemUtils().SkullLocal("§6Scratch", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDRjOGNkMzFiYWM2NTdhM2YyNmI1MmUyNjJjODNlYjgzMzhkNTY2NTFmZDIyYzE2MzM1NjVmM2RiYmM0NTc3NyJ9fX0="), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasJump) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == Scratch.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new Scratch(djEntity));
+            });
+            final boolean hasSky = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.SKY));
+            inventoryUtils.setItem(14, new ItemUtils().SkullLocal("§6Mains dans le ciel", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWZmNDlhODY0NWRkNjhiNjhmMGJhZmEyMjY1YmFkOTMyZjc1MWM1ODRlNGY3MzFmZDcxNzNhNWU1YjI2ZDMifX19"), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasSky) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == Sky.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new Sky(djEntity));
+            });
+            final boolean hasSlowDance = djEntity.getAnimationsProgress().parallelStream().anyMatch(iAnimations -> iAnimations.getAnimationType().equals(Animations.SlOWDANCE));
+            inventoryUtils.setItem(15, new ItemUtils().SkullLocal("§6Slow", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzNiNGYzYjNjZWY2ODE3ZTcxZmViMGRhNDc5NDI1ZWI5ZDc5ZjFlZmQ1YWViNWFkN2M5ZTI2MTZiMTI0Y2U4NCJ9fX0="), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasSlowDance) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == SlowDance.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else
+                    djEntity.addAnimations(new SlowDance(djEntity));
+            });
+            if (djEntity.hasChoreography())
+                inventoryUtils.setItem(40, new ItemUtils().ItemStack(Material.BARRIER, Optional.of("§c§lEnlever la chorégraphie"), Optional.empty(), Optional.empty()), inventoryClickEvent -> {
+                    player.closeInventory();
+                    djEntity.stopChoreography();
+                });
+        });
+        inventoryUtils.open(player);
+    }
+
+    public void open(final Player player) {
+        final Inventory inventory = DjPlugin.getPlugin(DjPlugin.class).getServer().createInventory(null, 9 * rows, ChatColor.translateAlternateColorCodes('&', title));
+        for (final Integer slot : this.items.keySet()) {
             inventory.setItem(slot, this.items.get(slot));
         }
         this.inventory = Optional.of(inventory);
