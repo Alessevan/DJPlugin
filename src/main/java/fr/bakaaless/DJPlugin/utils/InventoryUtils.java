@@ -153,6 +153,19 @@ public class InventoryUtils implements Listener {
                     djEntity.addAnimations(new Rainbow(djEntity));
                 }
             });
+            inventoryUtils.setItem(30, new ItemUtils().ItemStack(Material.BEACON, Optional.of("§6DISCO BALL"), Optional.empty(), Optional.of(1), hasRainbow), inventoryClickEvent -> {
+                player.closeInventory();
+                if (hasRainbow) {
+                    final Iterator<IAnimations> it = djEntity.getAnimationsProgress().parallelStream().filter(IAnimations -> IAnimations.getClass() == DiscoBall.class).iterator();
+                    while (it.hasNext()) {
+                        final IAnimations iAnimations = it.next();
+                        iAnimations.stop();
+                        djEntity.getAnimationsProgress().remove(iAnimations);
+                    }
+                } else {
+                    djEntity.addAnimations(new DiscoBall(djEntity));
+                }
+            });
             inventoryUtils.setItem(22, new ItemUtils().ItemStack(Material.BEACON, Optional.of("§6Boule DISCO"), Optional.empty(), Optional.of(1), hasDiscoBall), inventoryClickEvent -> {
                 player.closeInventory();
                 if (hasDiscoBall) {
